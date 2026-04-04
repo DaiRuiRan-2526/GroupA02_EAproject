@@ -1,22 +1,22 @@
-# app/blueprints/tutorials.py
-from flask import render_template, redirect, url_for, flash, request, abort, session,Blueprint
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, session
 from flask_login import login_required, current_user
 from app.decorators import admin_required
 from app.extensions import db
-from app.models.tutorial import Tutorial, TutorialCategory, TutorialStep, UserTutorialProgress
-from app.forms import TutorialForm, TutorialStepForm
+from app.models.tutorial import Tutorial, Category, Tag
+from app.forms import TutorialForm, CategoryForm, TagForm
 
 bp = Blueprint('tutorials', __name__, url_prefix='/tutorials')
+
 
 @bp.route('/')
 def list():
     category_slug = request.args.get('category')
     if category_slug:
-        category = TutorialCategory.query.filter_by(slug=category_slug).first_or_404()
+        category = Category.query.filter_by(slug=category_slug).first_or_404()
         tutorials = Tutorial.query.filter_by(category_id=category.id, is_published=True).all()
     else:
         tutorials = Tutorial.query.filter_by(is_published=True).all()
-    categories = TutorialCategory.query.order_by(TutorialCategory.sort_order).all()
+    categories = Category.query.order_by(Category.sort_order).all()
     return render_template('tutorials_list.html.j2', tutorials=tutorials, categories=categories)
 
 
@@ -25,17 +25,12 @@ def view(slug):
     tutorial = Tutorial.query.filter_by(slug=slug).first_or_404()
     if not tutorial.is_published and not (current_user.is_authenticated and current_user.is_admin()):
         abort(404)
-    
+
     if not session.get(f'viewed_tutorial_{tutorial.id}'):
         tutorial.view_count += 1
         db.session.commit()
         session[f'viewed_tutorial_{tutorial.id}'] = True
-    
-    progress = None
-    if current_user.is_authenticated:
-        progress = UserTutorialProgress.query.filter_by(user_id=current_user.id, tutorial_id=tutorial.id).first()
-    return render_template('tutorials/view.html', tutorial=tutorial, progress=progress)
-
+    return render_template('tutorials_view.html.j2', tutorial=tutorial)
 
 @bp.route('/create', methods=['GET', 'POST'])
 @login_required
@@ -51,11 +46,22 @@ def create():
             difficulty=form.difficulty.data,
             estimated_minutes=form.estimated_minutes.data,
             is_published=form.is_published.data,
-            category_id=form.category_id.data
+            category_id=form.category_id.data,
+            user_id=current_user.id
         )
         db.session.add(tutorial)
         db.session.commit()
-        flash('Tutorial created successfully', 'success')
+        if form.tags.data:
+            tag_names = [t.strip() for t in form.tags.data.split(',') if t.strip()]
+            for name in tag_names:
+                slug = name.lower().replace(' ', '-')
+                tag = Tag.query.filter_by(slug=slug).first()
+                if not tag:
+                    tag = Tag(name=name, slug=slug)
+                    db.session.add(tag)
+                tutorial.tags.append(tag)
+            db.session.commit()
+        flash('Tutorial created successfully.', 'success')
         return redirect(url_for('tutorials.view', slug=tutorial.slug))
     return render_template('tutorials/create.html', form=form)
 
@@ -65,6 +71,8 @@ def create():
 def edit(slug):
     tutorial = Tutorial.query.filter_by(slug=slug).first_or_404()
     form = TutorialForm(obj=tutorial)
+    if request.method == 'GET':
+        form.tags.data = ','.join([tag.name for tag in tutorial.tags])
     if form.validate_on_submit():
         tutorial.title = form.title.data
         tutorial.slug = form.slug.data
@@ -74,8 +82,19 @@ def edit(slug):
         tutorial.estimated_minutes = form.estimated_minutes.data
         tutorial.is_published = form.is_published.data
         tutorial.category_id = form.category_id.data
+
+        tutorial.tags.clear()
+        if form.tags.data:
+            tag_names = [t.strip() for t in form.tags.data.split(',') if t.strip()]
+            for name in tag_names:
+                slug = name.lower().replace(' ', '-')
+                tag = Tag.query.filter_by(slug=slug).first()
+                if not tag:
+                    tag = Tag(name=name, slug=slug)
+                    db.session.add(tag)
+                tutorial.tags.append(tag)
         db.session.commit()
-        flash('Tutorial updated', 'success')
+        flash('Tutorial updated.', 'success')
         return redirect(url_for('tutorials.view', slug=tutorial.slug))
     return render_template('tutorials/edit.html', form=form, tutorial=tutorial)
 
@@ -86,78 +105,100 @@ def delete(slug):
     tutorial = Tutorial.query.filter_by(slug=slug).first_or_404()
     db.session.delete(tutorial)
     db.session.commit()
-    flash('Tutorial deleted', 'success')
+    flash('Tutorial deleted.', 'success')
     return redirect(url_for('tutorials.list'))
 
-@bp.route('/<slug>/step/create', methods=['GET', 'POST'])
+@bp.route('/categories')
 @login_required
 @admin_required
-def create_step(slug):
-    tutorial = Tutorial.query.filter_by(slug=slug).first_or_404()
-    form = TutorialStepForm()
+def list_categories():
+    categories = Category.query.order_by(Category.sort_order).all()
+    return render_template('tutorials/categories.html', categories=categories)
+
+@bp.route('/category/create', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def create_category():
+    form = CategoryForm()
     if form.validate_on_submit():
-        step = TutorialStep(
-            tutorial_id=tutorial.id,
-            step_number=form.step_number.data,
-            title=form.title.data,
-            content=form.content.data,
-            code_snippet=form.code_snippet.data,
-            image_url=form.image_url.data
+        cat = Category(
+            name=form.name.data,
+            slug=form.slug.data,
+            description=form.description.data,
+            sort_order=form.sort_order.data
         )
-        db.session.add(step)
+        db.session.add(cat)
         db.session.commit()
-        flash('Step added', 'success')
-        return redirect(url_for('tutorials.view', slug=tutorial.slug))
-    return render_template('tutorials/step_form.html', form=form, tutorial=tutorial)
+        flash('Category created.', 'success')
+        return redirect(url_for('tutorials.list_categories'))
+    return render_template('tutorials/category_form.html', form=form)
 
-@bp.route('/step/<int:step_id>/edit', methods=['GET', 'POST'])
+@bp.route('/category/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
 @admin_required
-def edit_step(step_id):
-    step = TutorialStep.query.get_or_404(step_id)
-    form = TutorialStepForm(obj=step)
+def edit_category(id):
+    cat = Category.query.get_or_404(id)
+    form = CategoryForm(obj=cat)
     if form.validate_on_submit():
-        step.step_number = form.step_number.data
-        step.title = form.title.data
-        step.content = form.content.data
-        step.code_snippet = form.code_snippet.data
-        step.image_url = form.image_url.data
+        cat.name = form.name.data
+        cat.slug = form.slug.data
+        cat.description = form.description.data
+        cat.sort_order = form.sort_order.data
         db.session.commit()
-        flash('Steps updated', 'success')
-        return redirect(url_for('tutorials.view', slug=step.tutorial.slug))
-    return render_template('tutorials/step_form.html', form=form, tutorial=step.tutorial)
+        flash('Category updated.', 'success')
+        return redirect(url_for('tutorials.list_categories'))
+    return render_template('tutorials/category_form.html', form=form, category=cat)
 
-@bp.route('/step/<int:step_id>/delete', methods=['POST'])
+@bp.route('/category/<int:id>/delete', methods=['POST'])
 @login_required
 @admin_required
-def delete_step(step_id):
-    step = TutorialStep.query.get_or_404(step_id)
-    tutorial_slug = step.tutorial.slug
-    db.session.delete(step)
+def delete_category(id):
+    cat = Category.query.get_or_404(id)
+    db.session.delete(cat)
     db.session.commit()
-    flash('Step deleted', 'success')
-    return redirect(url_for('tutorials.view', slug=tutorial_slug))
+    flash('Category deleted.', 'success')
+    return redirect(url_for('tutorials.list_categories'))
 
-
-@bp.route('/my-progress')
+@bp.route('/tags')
 @login_required
-def my_progress():
-    progress_list = UserTutorialProgress.query.filter_by(user_id=current_user.id).all()
-    return render_template('tutorials/my_progress.html', progress_list=progress_list)
+@admin_required
+def list_tags():
+    tags = Tag.query.all()
+    return render_template('tutorials/tags.html', tags=tags)
 
-@bp.route('/<slug>/update-progress', methods=['POST'])
+@bp.route('/tag/create', methods=['GET', 'POST'])
 @login_required
-def update_progress(slug):
-    tutorial = Tutorial.query.filter_by(slug=slug).first_or_404()
-    completed = request.form.get('completed_steps', type=int, default=0)
-    progress = UserTutorialProgress.query.filter_by(user_id=current_user.id, tutorial_id=tutorial.id).first()
-    if not progress:
-        progress = UserTutorialProgress(user_id=current_user.id, tutorial_id=tutorial.id)
-        db.session.add(progress)
-    progress.completed_steps = completed
-    progress.is_completed = (completed >= len(tutorial.steps.all()))
-    if progress.is_completed and not progress.completed_at:
-        progress.completed_at = datetime.utcnow()
+@admin_required
+def create_tag():
+    form = TagForm()
+    if form.validate_on_submit():
+        tag = Tag(name=form.name.data, slug=form.slug.data)
+        db.session.add(tag)
+        db.session.commit()
+        flash('Tag created.', 'success')
+        return redirect(url_for('tutorials.list_tags'))
+    return render_template('tutorials/tag_form.html', form=form)
+
+@bp.route('/tag/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_tag(id):
+    tag = Tag.query.get_or_404(id)
+    form = TagForm(obj=tag)
+    if form.validate_on_submit():
+        tag.name = form.name.data
+        tag.slug = form.slug.data
+        db.session.commit()
+        flash('Tag updated.', 'success')
+        return redirect(url_for('tutorials.list_tags'))
+    return render_template('tutorials/tag_form.html', form=form, tag=tag)
+
+@bp.route('/tag/<int:id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_tag(id):
+    tag = Tag.query.get_or_404(id)
+    db.session.delete(tag)
     db.session.commit()
-    flash('Progress updated', 'success')
-    return redirect(url_for('tutorials.view', slug=tutorial.slug))
+    flash('Tag deleted.', 'success')
+    return redirect(url_for('tutorials.list_tags'))

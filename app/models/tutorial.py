@@ -1,9 +1,13 @@
 from app.extensions import db
 from datetime import datetime
 
-class TutorialCategory(db.Model):
-    
-    __tablename__ = 'tutorial_categories'
+tutorial_tags = db.Table('tutorial_tags',
+    db.Column('tutorial_id', db.Integer, db.ForeignKey('tutorials.id'), primary_key=True),
+    db.Column('tag_id', db.Integer, db.ForeignKey('tags.id'), primary_key=True)
+)
+
+class Category(db.Model):
+    __tablename__ = 'categories'
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True, nullable=False)
@@ -13,9 +17,16 @@ class TutorialCategory(db.Model):
     
     tutorials = db.relationship('Tutorial', backref='category', lazy='dynamic')
 
+class Tag(db.Model):
+    __tablename__ = 'tags'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    slug = db.Column(db.String(50), unique=True, nullable=False)
+    
+    tutorials = db.relationship('Tutorial', secondary=tutorial_tags, backref=db.backref('tags', lazy='dynamic'))
 
 class Tutorial(db.Model):
-    
     __tablename__ = 'tutorials'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -28,38 +39,12 @@ class Tutorial(db.Model):
     is_published = db.Column(db.Boolean, default=False)
     view_count = db.Column(db.Integer, default=0)
     like_count = db.Column(db.Integer, default=0)
-    category_id = db.Column(db.Integer, db.ForeignKey('tutorial_categories.id'))
+    
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    steps = db.relationship('TutorialStep', backref='tutorial', lazy='dynamic', cascade='all, delete-orphan')
-
-
-class TutorialStep(db.Model):
-    
-    __tablename__ = 'tutorial_steps'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    tutorial_id = db.Column(db.Integer, db.ForeignKey('tutorials.id'), nullable=False)
-    step_number = db.Column(db.Integer, nullable=False)
-    title = db.Column(db.String(200), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    code_snippet = db.Column(db.Text)  
-    image_url = db.Column(db.String(500))
-    
-    __table_args__ = (db.UniqueConstraint('tutorial_id', 'step_number'),)
-
-
-class UserTutorialProgress(db.Model):
-    
-    __tablename__ = 'user_tutorial_progress'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    tutorial_id = db.Column(db.Integer, db.ForeignKey('tutorials.id'), nullable=False)
-    completed_steps = db.Column(db.Integer, default=0)
-    is_completed = db.Column(db.Boolean, default=False)
-    started_at = db.Column(db.DateTime, default=datetime.utcnow)
-    completed_at = db.Column(db.DateTime)
-    
-    __table_args__ = (db.UniqueConstraint('user_id', 'tutorial_id'),)
+    def __repr__(self):
+        return f'<Tutorial {self.title}>'

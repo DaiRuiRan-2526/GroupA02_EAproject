@@ -20,16 +20,15 @@
             </div>
             <div class="card shadow-sm border-0 rounded-4 mt-4">
                 <div class="card-header bg-white border-0 pt-3">
-                    <h5><i class="fas fa-tags me-2"></i>Tags</h5>
+                    <h5><i class="fas fa-tags me-2"></i>Categories</h5>
                 </div>
-                <div class="card-body">
-                    {% for tag in tags %}
-                    <a href="{{ url_for('resources.list', tag=tag.slug) }}" class="badge bg-secondary text-decoration-none me-1 mb-1">{{ tag.name }}</a>
+                <div class="list-group list-group-flush">
+                    {% for cat in categories %}
+                    <a href="{{ url_for('resources.list', category=cat.slug) }}" class="list-group-item list-group-item-action">{{ cat.name }}</a>
                     {% endfor %}
                 </div>
             </div>
         </div>
-
         <div class="col-md-9">
             <h2 class="mb-4">Resources</h2>
             <div class="row g-4">
@@ -38,17 +37,11 @@
                     <div class="card h-100 shadow-sm border-0 rounded-4">
                         <div class="card-body">
                             <span class="badge bg-info mb-2">{{ resource.type|capitalize }}</span>
-                            <h5 class="card-title">
-                                <a href="{{ url_for('resources.view', id=resource.id) }}" class="text-decoration-none text-dark">
-                                    {{ resource.title }}
-                                </a>
-                            </h5>
+                            <h5 class="card-title"><a href="{{ url_for('resources.view', id=resource.id) }}" class="text-decoration-none text-dark">{{ resource.title }}</a></h5>
                             <p class="card-text text-muted small">{{ resource.description|truncate(80) }}</p>
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <small><i class="fas fa-download"></i> {{ resource.download_count }} downloads</small>
-                                {% if resource.download_url %}
                                 <a href="{{ url_for('resources.download', id=resource.id) }}" class="btn btn-sm btn-purple">Download</a>
-                                {% endif %}
                             </div>
                         </div>
                     </div>
