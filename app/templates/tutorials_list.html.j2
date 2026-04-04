@@ -1,0 +1,60 @@
+{% extends "base.html.j2" %}
+
+{% block title %}Tutorials - ASP.NET Core{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <!-- Sidebar with categories -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-white border-0 pt-3">
+                    <h5><i class="fas fa-tags me-2"></i>Categories</h5>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <a href="{{ url_for('tutorials.list') }}" class="text-decoration-none">All Tutorials</a>
+                    </li>
+                    {% for cat in categories %}
+                    <li class="list-group-item">
+                        <a href="{{ url_for('tutorials.list', category=cat.slug) }}" class="text-decoration-none">
+                            {{ cat.name }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tutorial list -->
+        <div class="col-md-9">
+            <h2 class="mb-4">Tutorials</h2>
+            {% if tutorials %}
+                <div class="row g-4">
+                    {% for tutorial in tutorials %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 shadow-sm border-0 rounded-4">
+                            <div class="card-body">
+                                <span class="badge bg-purple mb-2">{{ tutorial.difficulty|capitalize }}</span>
+                                <h5 class="card-title">
+                                    <a href="{{ url_for('tutorials.view', slug=tutorial.slug) }}" class="text-decoration-none text-dark">
+                                        {{ tutorial.title }}
+                                    </a>
+                                </h5>
+                                <p class="card-text text-muted">{{ tutorial.summary|truncate(100) }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small><i class="far fa-clock me-1"></i> {{ tutorial.estimated_minutes }} min</small>
+                                    <small><i class="far fa-eye me-1"></i> {{ tutorial.view_count }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">No tutorials found. Check back later!</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
