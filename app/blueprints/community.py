@@ -23,7 +23,7 @@ def view_post(id):
     post.view_count += 1
     db.session.commit()
     comments = post.comments.order_by(PostComment.created_at.asc()).all()
-    return render_template('community/post.html', post=post, comments=comments, form=form)
+    return render_template('community_post.html.j2', post=post, comments=comments, form=form)
 
 
 @bp.route('/post/create', methods=['GET', 'POST'])
@@ -41,7 +41,7 @@ def create_post():
         db.session.commit()
         flash('Post created', 'success')
         return redirect(url_for('community.view_post', id=post.id))
-    return render_template('community/post_form.html', form=form)
+    return render_template('community_post_form.html.j2', form=form)
 
 
 @bp.route('/post/<int:id>/edit', methods=['GET', 'POST'])
@@ -59,7 +59,7 @@ def edit_post(id):
         db.session.commit()
         flash('Post updated', 'success')
         return redirect(url_for('community.view_post', id=post.id))
-    return render_template('community/post_form.html', form=form, post=post)
+    return render_template('community_post_form.html.j2', form=form, post=post)
 
 
 @bp.route('/post/<int:id>/delete', methods=['POST'])
@@ -106,7 +106,7 @@ def edit_comment(comment_id):
         flash('Comment updated', 'success')
         return redirect(url_for('community.view_post', id=comment.post_id))
     form.content.data = comment.content
-    return render_template('community/comment_edit.html', form=form, comment=comment)
+    return render_template('community_comment_edit.html.j2', form=form, comment=comment)
 
 @bp.route('/comment/<int:comment_id>/delete', methods=['POST'])
 @login_required

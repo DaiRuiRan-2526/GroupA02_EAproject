@@ -1,0 +1,50 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ tutorial.title }} - ASP.NET Core Tutorials{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('tutorials.list') }}">Tutorials</a></li>
+            <li class="breadcrumb-item active">{{ tutorial.title }}</li>
+        </ol>
+    </nav>
+    <div class="row">
+        <div class="col-lg-8">
+            <h1 class="mb-3">{{ tutorial.title }}</h1>
+            <div class="d-flex gap-3 mb-4 text-muted">
+                <span><i class="far fa-clock"></i> {{ tutorial.estimated_minutes }} min read</span>
+                <span><i class="far fa-eye"></i> {{ tutorial.view_count }} views</span>
+                <span><i class="far fa-thumbs-up"></i> {{ tutorial.like_count }} likes</span>
+            </div>
+            <div class="tutorial-content mb-5">
+                {{ tutorial.content|safe }}
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 rounded-4 mb-4">
+                <div class="card-body">
+                    <h5>About this tutorial</h5>
+                    <ul class="list-unstyled">
+                        <li><strong>Difficulty:</strong> {{ tutorial.difficulty|capitalize }}</li>
+                        <li><strong>Category:</strong> {{ tutorial.category.name if tutorial.category else 'General' }}</li>
+                        <li><strong>Published:</strong> {{ tutorial.created_at.strftime('%Y-%m-%d') }}</li>
+                    </ul>
+                </div>
+            </div>
+            {% if current_user.is_authenticated and current_user.is_admin() %}
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body">
+                    <h5>Admin Actions</h5>
+                    <a href="{{ url_for('tutorials.edit', slug=tutorial.slug) }}" class="btn btn-sm btn-outline-secondary w-100 mb-2">Edit Tutorial</a>
+                    <form method="post" action="{{ url_for('tutorials.delete', slug=tutorial.slug) }}" onsubmit="return confirm('Delete this tutorial?')">
+                        <button type="submit" class="btn btn-sm btn-outline-danger w-100">Delete Tutorial</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
