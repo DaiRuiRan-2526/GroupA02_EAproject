@@ -1,0 +1,101 @@
+{% extends "base.html.j2" %}
+
+{% block title %}{{ post.title }} - ASP.NET Core Community{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+
+    <div class="mb-4">
+        <a href="{{ url_for('community.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Community
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+
+            <!-- Post content -->
+            <div class="card shadow-sm border-0 rounded-4 mb-4">
+                <div class="card-body p-5">
+                    
+                    {% if post.is_pinned %}
+                    <span class="badge bg-warning mb-3">📌 Pinned Post</span>
+                    {% endif %}
+
+                    <h1 class="display-6 fw-bold mb-3">{{ post.title }}</h1>
+                    
+                    <div class="d-flex align-items-center text-muted mb-4">
+                        <img src="https://ui-avatars.com/api/?name={{ post.author.username if post.author else 'User' }}&background=5c2d91&color=fff" 
+                             class="rounded-circle me-3" width="40" height="40" alt="">
+                        <div>
+                            <strong>{{ post.author.username if post.author else 'Unknown User' }}</strong>
+                            <div class="small">
+                                Posted on {{ post.created_at.strftime('%Y-%m-%d %H:%M') }}
+                            </div>
+                        </div>
+                        <div class="ms-auto">
+                            <span class="badge bg-light text-dark">{{ post.category }}</span>
+                        </div>
+                    </div>
+
+                    <div class="post-content fs-5 lh-lg">
+                        {{ post.content | safe }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comments section -->
+            <h4 class="mb-4">Replies ({{ comments|length }})</h4>
+
+            {% for comment in comments %}
+            <div class="card mb-3 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex">
+                        <img src="https://ui-avatars.com/api/?name={{ comment.user.username if comment.user else 'User' }}&background=5c2d91&color=fff" 
+                             class="rounded-circle me-3" width="40" height="40">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between">
+                                <strong>
+                                    {{ comment.user.username if comment.user else 'Unknown User' }}
+                                </strong>
+                                <small class="text-muted">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            <div class="mt-2">{{ comment.content | safe }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-comments fa-3x mb-3 opacity-25"></i>
+                <p>No replies yet. Be the first to comment!</p>
+            </div>
+            {% endfor %}
+
+            <!-- submit reply  -->
+            {% if current_user.is_authenticated %}
+            <div class="card shadow-sm border-0 rounded-4 mt-5">
+                <div class="card-body p-4">
+                    <h5 class="mb-3">Write a Reply</h5>
+                    <form method="POST" action="{{ url_for('community.create_comment', post_id=post.id) }}">
+                        {{ form.hidden_tag() }}
+                        {{ form.content(class="form-control", rows="5", placeholder="Share your thoughts...") }}
+                        {% for error in form.content.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-purple mt-3">
+                            <i class="fas fa-paper-plane me-2"></i>Post Reply
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info mt-4">
+                Please <a href="{{ url_for('auth.login') }}">login</a> to reply.
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

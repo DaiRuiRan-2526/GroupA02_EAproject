@@ -36,6 +36,7 @@ class PostComment(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    user = db.relationship('User', backref='comments', lazy='joined')
     replies = db.relationship('PostComment', backref=db.backref('parent', remote_side=[id]), lazy='dynamic')
     
     def __repr__(self):

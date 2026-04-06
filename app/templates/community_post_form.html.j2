@@ -1,0 +1,103 @@
+{% extends "base.html.j2" %}
+
+{% block title %}New Discussion - ASP.NET Core Community{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="d-flex align-items-center mb-4">
+                <i class="fas fa-plus-circle fa-2x text-purple me-3"></i>
+                <h2 class="mb-0">Create New Discussion Post</h2>
+            </div>
+
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-5">
+
+                    <form method="POST" action="{{ url_for('community.create_post') }}">
+                        {{ form.hidden_tag() }}
+
+                        <!-- Title -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Discussion Title <span class="text-danger">*</span></label>
+                            {{ form.title(class="form-control form-control-lg", placeholder="e.g. How to deploy ASP.NET Core app to Azure?") }}
+                            {% for error in form.title.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Category -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                            {{ form.category(class="form-select") }}
+                            {% for error in form.category.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text">
+                                Choose the most suitable category for your post
+                            </div>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Content <span class="text-danger">*</span></label>
+                            {{ form.content(class="form-control", rows="14", 
+                                           placeholder="Describe your question, idea, or showcase in detail...") }}
+                            {% for error in form.content.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Optional: Is Pinned (only show in Admin role) -->
+                        {% if current_user.is_authenticated and current_user.is_admin() %}
+                        <div class="mb-4 form-check">
+                            {{ form.is_pinned(class="form-check-input") }}
+                            <label class="form-check-label fw-semibold">
+                                Pin this post (Admin only)
+                            </label>
+                        </div>
+                        {% endif %}
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between align-items-center pt-4">
+                            <a href="{{ url_for('community.index') }}" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                            
+                            <button type="submit" class="btn btn-purple btn-lg px-5">
+                                <i class="fas fa-paper-plane me-2"></i>Post Now
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+            <div class="text-center text-muted mt-4 small">
+                <i class="fas fa-shield-alt"></i> 
+                Please keep discussions respectful and on-topic.
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-control:focus, .form-select:focus {
+        border-color: #5c2d91;
+        box-shadow: 0 0 0 0.25rem rgba(92, 45, 145, 0.15);
+    }
+    
+    .form-control-lg {
+        font-size: 1.1rem;
+    }
+    
+    textarea.form-control {
+        resize: vertical;
+        min-height: 320px;
+    }
+</style>
+{% endblock %}
