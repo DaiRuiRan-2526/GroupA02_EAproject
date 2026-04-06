@@ -12,18 +12,12 @@
         <a href="{{ url_for('auth.login') }}" class="btn btn-outline-purple">Login to Post</a>
         {% endif %}
     </div>
-
     <div class="card shadow-sm border-0 rounded-4">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
                     <thead class="table-light">
-                        <tr>
-                            <th>Topic</th>
-                            <th class="text-center">Replies</th>
-                            <th class="text-center">Views</th>
-                            <th>Latest Activity</th>
-                        </tr>
+                        <tr><th>Topic</th><th class="text-center">Replies</th><th class="text-center">Views</th><th>Latest Activity</th></tr>
                     </thead>
                     <tbody>
                         {% for post in posts.items %}
@@ -38,35 +32,16 @@
                             <td class="small">{{ post.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
                         </tr>
                         {% else %}
-                        <tr>
-                            <td colspan="4" class="text-center">No posts yet. Be the first to start a discussion!</td>
-                        </tr>
+                        <tr><td colspan="4" class="text-center">No posts yet. Be the first to start a discussion!</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-
     <!-- Pagination -->
     {% if posts.pages > 1 %}
-    <nav class="mt-4">
-        <ul class="pagination justify-content-center">
-            {% if posts.has_prev %}
-            <li class="page-item"><a class="page-link" href="{{ url_for('community.index', page=posts.prev_num) }}">Previous</a></li>
-            {% endif %}
-            {% for page_num in posts.iter_pages() %}
-                {% if page_num %}
-                    <li class="page-item {% if page_num == posts.page %}active{% endif %}"><a class="page-link" href="{{ url_for('community.index', page=page_num) }}">{{ page_num }}</a></li>
-                {% else %}
-                    <li class="page-item disabled"><span class="page-link">...</span></li>
-                {% endif %}
-            {% endfor %}
-            {% if posts.has_next %}
-            <li class="page-item"><a class="page-link" href="{{ url_for('community.index', page=posts.next_num) }}">Next</a></li>
-            {% endif %}
-        </ul>
-    </nav>
+    <nav class="mt-4"><ul class="pagination justify-content-center">...</ul></nav>
     {% endif %}
 </div>
 {% endblock %}

@@ -1,5 +1,4 @@
-from app.models.user import User
-from app.models.tutorial import TutorialCategory, Tutorial, TutorialStep, UserTutorialProgress
-from app.models.resource import ResourceCategory, Resource, ResourceTag, ResourceDownload
+from app.models.user import User, Role, user_roles
+from app.models.tutorial import Category, Tag, Tutorial, tutorial_tags
 from app.models.community import DiscussionPost, PostComment, PostLike
-from app.models.site import SiteSetting
+from app.models.resource import ResourceCategory, Resource, Download

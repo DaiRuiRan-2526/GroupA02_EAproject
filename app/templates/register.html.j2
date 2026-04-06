@@ -27,10 +27,16 @@
                     <div class="mb-3">
                         {{ form.password.label(class="form-label") }}
                         {{ form.password(class="form-control") }}
+                        {% for error in form.password.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
                     </div>
                     <div class="mb-3">
                         {{ form.password2.label(class="form-label") }}
                         {{ form.password2(class="form-control") }}
+                        {% for error in form.password2.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
                     </div>
                     {{ form.submit(class="btn btn-purple w-100 py-2") }}
                 </form>
