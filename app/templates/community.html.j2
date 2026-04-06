@@ -6,6 +6,7 @@
 <div class="container my-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Community Discussions</h2>
+        
         {% if current_user.is_authenticated %}
         <a href="{{ url_for('community.create_post') }}" class="btn btn-purple">
             <i class="fas fa-plus me-2"></i>New Post
@@ -13,6 +14,28 @@
         {% else %}
         <a href="{{ url_for('auth.login') }}" class="btn btn-outline-purple">Login to Post</a>
         {% endif %}
+    </div>
+
+    <!-- Sorting Options -->
+    <div class="mb-3">
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('community.index') }}?sort=latest" 
+               class="btn {{ 'btn-primary' if request.args.get('sort') in [None, 'latest'] else 'btn-outline-secondary' }}">
+                Latest
+            </a>
+            <a href="{{ url_for('community.index') }}?sort=replies" 
+               class="btn {{ 'btn-primary' if request.args.get('sort') == 'replies' else 'btn-outline-secondary' }}">
+                Most Replies
+            </a>
+            <a href="{{ url_for('community.index') }}?sort=views" 
+               class="btn {{ 'btn-primary' if request.args.get('sort') == 'views' else 'btn-outline-secondary' }}">
+                Most Views
+            </a>
+            <a href="{{ url_for('community.index') }}?sort=likes" 
+               class="btn {{ 'btn-primary' if request.args.get('sort') == 'likes' else 'btn-outline-secondary' }}">
+                Most Likes
+            </a>
+        </div>
     </div>
 
     <div class="card shadow-sm border-0 rounded-4">
@@ -23,40 +46,44 @@
                         <tr>
                             <th>Topic</th>
                             <th class="text-center">Likes</th>
-                            <th class="text-center">Comments</th>
+                            <th class="text-center">Replies</th>
                             <th class="text-center">Views</th>
                             <th>Latest Activity</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for post in posts.items %}
+                        {% for post in posts %}
                         <tr>
                             <td>
-                                {% if post.is_pinned %}<span class="badge bg-warning me-1">Pinned</span>{% endif %}
+                                {% if post.is_pinned %}
+                                    <i class="bi bi-pin-fill text-warning me-2" style="font-size: 1.25rem;"></i>
+                                {% endif %}
+                                
                                 <a href="{{ url_for('community.view_post', id=post.id) }}" 
                                    class="text-decoration-none fw-bold">
                                     {{ post.title }}
                                 </a>
+                                
+                                <div class="mt-1">
+                                    {% if post.category == 'general' %}
+                                        <span class="badge bg-primary">General</span>
+                                    {% elif post.category == 'help' %}
+                                        <span class="badge bg-warning text-dark">Help</span>
+                                    {% elif post.category == 'showcase' %}
+                                        <span class="badge bg-success">Showcase</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ post.category | title }}</span>
+                                    {% endif %}
+                                </div>
+                                
                                 <div class="small text-muted">
-                                    by {{ post.author.username if post.author else 'Unknown' }} · {{ post.category }}
+                                    by {{ post.author.username if post.author else 'Unknown' }}
                                 </div>
                             </td>
-                            <!-- Likes -->
-                            <td class="text-center">
-                                {{ post.likes.count() if post.likes else 0 }}
-                            </td>
-                            <!-- Comments -->
-                            <td class="text-center fw-medium">
-                                {{ post.comments.filter_by(parent_id=None).count() if post.comments else 0 }}
-                            </td>
-                            <!-- Views -->
-                            <td class="text-center">
-                                {{ post.view_count }}
-                            </td>
-                            <!-- Latest Activity -->
-                            <td class="small">
-                                {{ post.updated_at.strftime('%Y-%m-%d %H:%M') }}
-                            </td>
+                            <td class="text-center">{{ post.likes.count() if post.likes else 0 }}</td>
+                            <td class="text-center">{{ post.reply_count }}</td>
+                            <td class="text-center">{{ post.view_count }}</td>
+                            <td class="small">{{ post.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
                         </tr>
                         {% else %}
                         <tr>
@@ -68,14 +95,23 @@
             </div>
         </div>
     </div>
-
     <!-- Pagination -->
-    {% if posts.pages > 1 %}
-    <nav class="mt-4">
-        <ul class="pagination justify-content-center">
-            ...
-        </ul>
-    </nav>
-    {% endif %}
+        {% if pagination and pagination.pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% for page_num in pagination.iter_pages() %}
+                    {% if page_num %}
+                        <li class="page-item {{ 'active' if page_num == pagination.page else '' }}">
+                            <a class="page-link" href="{{ url_for('community.index', page=page_num, sort=request.args.get('sort', 'latest')) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+        {% endif %}
 </div>
 {% endblock %}
