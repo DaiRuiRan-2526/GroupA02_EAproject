@@ -5,14 +5,43 @@ from app.extensions import db
 from app.models.community import DiscussionPost, PostComment, PostLike
 from app.forms import PostForm, CommentForm
 from datetime import datetime, timedelta 
+from sqlalchemy import func
 
 bp = Blueprint('community', __name__, url_prefix='/community')
 
 @bp.route('/')
 def index():
     page = request.args.get('page', 1, type=int)
-    posts = DiscussionPost.query.order_by(DiscussionPost.is_pinned.desc(), DiscussionPost.created_at.desc()).paginate(page=page, per_page=20)
-    return render_template('community.html.j2', posts=posts)
+    sort = request.args.get('sort', 'latest')
+
+    #pinned post 
+    pinned_posts = DiscussionPost.query.filter_by(is_pinned=True)\
+        .order_by(DiscussionPost.created_at.desc()).all()
+
+    # sort + non pinned post
+    if sort == 'replies':
+        query = DiscussionPost.query.filter_by(is_pinned=False)\
+            .order_by(DiscussionPost.reply_count.desc(), DiscussionPost.created_at.desc())
+    elif sort == 'views':
+        query = DiscussionPost.query.filter_by(is_pinned=False)\
+            .order_by(DiscussionPost.view_count.desc(), DiscussionPost.created_at.desc())
+    elif sort == 'likes':
+        query = DiscussionPost.query.filter_by(is_pinned=False)\
+            .outerjoin(PostLike)\
+            .group_by(DiscussionPost.id)\
+            .order_by(func.count(PostLike.id).desc(), DiscussionPost.created_at.desc())
+    else:  # latest
+        query = DiscussionPost.query.filter_by(is_pinned=False)\
+            .order_by(DiscussionPost.created_at.desc())
+
+
+    pagination = query.paginate(page=page, per_page=20)
+
+    posts = pinned_posts + pagination.items
+
+    return render_template('community.html.j2', 
+                           posts=posts, 
+                           pagination=pagination)
 
 
 @bp.route('/post/<int:id>')
