@@ -1,10 +1,10 @@
 # app/blueprints/community.py
-from flask import render_template, redirect, url_for, flash, request, abort, Blueprint, jsonify
+from flask import render_template, redirect, url_for, flash, request, abort, Blueprint, jsonify, session
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.community import DiscussionPost, PostComment, PostLike
 from app.forms import PostForm, CommentForm
-from datetime import datetime
+from datetime import datetime, timedelta 
 
 bp = Blueprint('community', __name__, url_prefix='/community')
 
@@ -19,10 +19,15 @@ def index():
 def view_post(id):
     post = DiscussionPost.query.get_or_404(id)
     form = CommentForm()
-    
 
-    post.view_count += 1
-    db.session.commit()
+    if current_user.is_authenticated:
+        session_key = f'viewed_post_{post.id}'
+        last_viewed = session.get(session_key)
+
+        if last_viewed is None or (datetime.utcnow() - last_viewed.replace(tzinfo=None)) > timedelta(minutes=30):
+            post.view_count += 1
+            session[session_key] = datetime.utcnow()   
+            db.session.commit()
 
     comments = post.comments.order_by(PostComment.created_at.asc()).all()
 

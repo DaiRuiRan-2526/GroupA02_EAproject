@@ -66,8 +66,9 @@
             </div>
 
             <!-- Comments section -->
-            <h4 class="mb-4">Comments ({{ comments|length }})</h4>
-
+            <h4 class="mb-4">
+                Comments ({{ comments|selectattr('parent_id', 'none')|list|length }})
+            </h4>
             {% for comment in comments %}
                 {% if not comment.parent_id %}   <!-- show main comments -->
 
@@ -196,7 +197,7 @@ function toggleLike(postId) {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Like 操作失敗，請稍後再試');
+        alert('Please try again later!');
     });
 }
 
