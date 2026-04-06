@@ -175,3 +175,25 @@ def like_post(post_id):
             'liked': False,
             'like_count': 0
         }), 500
+    
+@bp.route('/comment/<int:comment_id>/reply', methods=['POST'])
+@login_required
+def reply_to_comment(comment_id):
+    parent_comment = PostComment.query.get_or_404(comment_id)
+    form = CommentForm()
+
+    if form.validate_on_submit():
+        reply = PostComment(
+            content=form.content.data,
+            post_id=parent_comment.post_id,
+            user_id=current_user.id,
+            parent_id=parent_comment.id   
+        )
+        db.session.add(reply)
+        db.session.commit()
+        
+        flash('Reply posted successfully', 'success')
+        return redirect(url_for('community.view_post', id=parent_comment.post_id))
+    else:
+        flash('Reply content cannot be empty.', 'danger')
+        return redirect(url_for('community.view_post', id=parent_comment.post_id))

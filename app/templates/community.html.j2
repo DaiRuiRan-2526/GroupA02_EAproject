@@ -34,20 +34,29 @@
                             <td>
                                 {% if post.is_pinned %}<span class="badge bg-warning me-1">Pinned</span>{% endif %}
                                 <a href="{{ url_for('community.view_post', id=post.id) }}" 
-                                class="text-decoration-none fw-bold">
+                                   class="text-decoration-none fw-bold">
                                     {{ post.title }}
                                 </a>
                                 <div class="small text-muted">
                                     by {{ post.author.username if post.author else 'Unknown' }} · {{ post.category }}
                                 </div>
                             </td>
-                            <!-- Likes 只顯示數字 -->
-                            <td class="text-center ">
+                            <!-- Likes -->
+                            <td class="text-center">
                                 {{ post.likes.count() if post.likes else 0 }}
                             </td>
-                            <td class="text-center">{{ post.reply_count }}</td>
-                            <td class="text-center">{{ post.view_count }}</td>
-                            <td class="small">{{ post.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <!-- Replies -->
+                            <td class="text-center fw-medium">
+                                {{ post.comments.count() if post.comments else 0 }}
+                            </td>
+                            <!-- Views -->
+                            <td class="text-center">
+                                {{ post.view_count }}
+                            </td>
+                            <!-- Latest Activity -->
+                            <td class="small">
+                                {{ post.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                            </td>
                         </tr>
                         {% else %}
                         <tr>

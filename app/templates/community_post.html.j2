@@ -38,16 +38,17 @@
                         </div>
                     </div>
 
-                   <div class="post-content fs-5 lh-lg">
+                    <div class="post-content fs-5 lh-lg">
                         {{ post.content | safe }}
                     </div>
+
                     <!-- Like button -->
                     <div class="d-flex gap-3 mt-4">
                         <button id="like-btn" 
                                 class="btn like-button {{ 'btn-danger text-white' if current_user_has_liked else 'btn-outline-danger' }}"
                                 onclick="toggleLike({{ post.id }})">
                             <i class="fas fa-heart" id="like-icon" 
-                            style="{{ 'color: white;' if current_user_has_liked else 'color: #dc3545;' }}"></i> 
+                               style="{{ 'color: white;' if current_user_has_liked else 'color: #dc3545;' }}"></i> 
                             <span id="like-count" class="ms-1 fw-bold">{{ post.likes.count() if post.likes else 0 }}</span>
                         </button>
 
@@ -61,40 +62,85 @@
                             {{ post.view_count }} Views
                         </button>
                     </div>
+                </div>
+            </div>
 
             <!-- Comments section -->
-            <h4 class="mb-4">Replies ({{ comments|length }})</h4>
+            <h4 class="mb-4">Comments ({{ comments|length }})</h4>
 
             {% for comment in comments %}
-            <div class="card mb-3 border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex">
-                        <img src="https://ui-avatars.com/api/?name={{ comment.user.username if comment.user else 'User' }}&background=5c2d91&color=fff" 
-                             class="rounded-circle me-3" width="40" height="40">
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between">
-                                <strong>
-                                    {{ comment.user.username if comment.user else 'Unknown User' }}
-                                </strong>
-                                <small class="text-muted">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                {% if not comment.parent_id %}   <!-- show main comments -->
+
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <img src="https://ui-avatars.com/api/?name={{ comment.user.username if comment.user else 'User' }}&background=5c2d91&color=fff" 
+                                class="rounded-circle me-3" width="42" height="42">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ comment.user.username if comment.user else 'Unknown User' }}</strong>
+                                    <small class="text-muted">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                                <div class="mt-2">{{ comment.content | safe }}</div>
+
+                                <!-- Reply Button -->
+                                <div class="mt-3">
+                                    {% if current_user.is_authenticated %}
+                                    <button class="btn btn-sm btn-outline-secondary" 
+                                            onclick="showReplyForm({{ comment.id }})">
+                                        <i class="fas fa-reply me-1"></i>Reply
+                                    </button>
+                                    {% endif %}
+                                </div>
+
+                                
+                                <div id="replies-container-{{ comment.id }}" class="mt-4">
+                                    {% set replies = comment.replies.all() %}
+                                    {% if replies %}
+                                    <div class="small text-muted mb-2">
+                                        <span onclick="toggleReplies({{ comment.id }})" style="cursor:pointer;">
+                                            <i class="fas fa-chevron-down"></i> {{ replies|length }} 則回覆
+                                        </span>
+                                    </div>
+                                    <div id="reply-list-{{ comment.id }}" class="reply-list">
+                                        {% for reply in replies %}
+                                        <div class="mb-3 ms-4 border-start border-2 border-purple ps-3">
+                                            <div class="d-flex justify-content-between">
+                                                <strong>{{ reply.user.username if reply.user else 'Unknown User' }}</strong>
+                                                <small class="text-muted">{{ reply.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                            </div>
+                                            <div class="mt-1">{{ reply.content | safe }}</div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Reply Form for this comment -->
+                                <div id="reply-form-{{ comment.id }}" class="reply-form mt-3" style="display: none;">
+                                    <form method="POST" action="{{ url_for('community.reply_to_comment', comment_id=comment.id) }}">
+                                        {{ form.hidden_tag() }}
+                                        <textarea name="content" class="form-control" rows="3" placeholder="Write your reply..."></textarea>
+                                        <div class="mt-2">
+                                            <button type="submit" class="btn btn-purple btn-sm">Post Reply</button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm ms-2" 
+                                                    onclick="hideReplyForm({{ comment.id }})">Cancel</button>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
-                            <div class="mt-2">{{ comment.content | safe }}</div>
                         </div>
                     </div>
                 </div>
-            </div>
-            {% else %}
-            <div class="text-center text-muted py-5">
-                <i class="fas fa-comments fa-3x mb-3 opacity-25"></i>
-                <p>No replies yet. Be the first to comment!</p>
-            </div>
+
+                {% endif %}
             {% endfor %}
 
-            <!-- submit reply  -->
+            <!-- Main Reply to Post -->
             {% if current_user.is_authenticated %}
             <div class="card shadow-sm border-0 rounded-4 mt-5">
                 <div class="card-body p-4">
-                    <h5 class="mb-3">Write a Reply</h5>
+                    <h5 class="mb-3">Write a Comment</h5>
                     <form method="POST" action="{{ url_for('community.create_comment', post_id=post.id) }}">
                         {{ form.hidden_tag() }}
                         {{ form.content(class="form-control", rows="5", placeholder="Share your thoughts...") }}
@@ -116,6 +162,7 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
 {% block extra_js %}
 <script>
@@ -140,11 +187,10 @@ function toggleLike(postId) {
             btn.classList.add('btn-danger', 'text-white');
             icon.style.color = 'white';
             icon.classList.add('like-animate');
-
         } else {
             btn.classList.remove('btn-danger', 'text-white');
             btn.classList.add('btn-outline-danger');
-            icon.style.color = '';   
+            icon.style.color = '#dc3545';
             icon.classList.remove('like-animate');
         }
     })
@@ -153,7 +199,34 @@ function toggleLike(postId) {
         alert('Like 操作失敗，請稍後再試');
     });
 }
-</script>
-{% endblock %}
 
+// Nested Reply Functions
+function showReplyForm(commentId, username) {
+    const formDiv = document.getElementById(`reply-form-${commentId}`);
+    formDiv.style.display = 'block';
+}
+
+function hideReplyForm(commentId) {
+    document.getElementById(`reply-form-${commentId}`).style.display = 'none';
+}
+// shiw reply list
+function toggleReplies(commentId) {
+    const list = document.getElementById(`reply-list-${commentId}`);
+    if (list.style.display === 'none') {
+        list.style.display = 'block';
+    } else {
+        list.style.display = 'none';
+    }
+}
+
+// Show Reply
+function showReplyForm(commentId) {
+    document.getElementById(`reply-form-${commentId}`).style.display = 'block';
+}
+
+// Hide Reply
+function hideReplyForm(commentId) {
+    document.getElementById(`reply-form-${commentId}`).style.display = 'none';
+}
+</script>
 {% endblock %}
