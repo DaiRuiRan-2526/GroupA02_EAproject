@@ -55,12 +55,14 @@ def create_post():
             title=form.title.data,
             content=form.content.data,
             category=form.category.data,
-            user_id=current_user.id
+            user_id=current_user.id,
+            is_pinned=form.is_pinned.data if current_user.is_admin() else False
         )
         db.session.add(post)
         db.session.commit()
         flash('Post created', 'success')
         return redirect(url_for('community.view_post', id=post.id))
+    
     return render_template('community_post_form.html.j2', form=form)
 
 
@@ -75,10 +77,13 @@ def edit_post(id):
         post.title = form.title.data
         post.content = form.content.data
         post.category = form.category.data
+        if current_user.is_admin():
+            post.is_pinned = form.is_pinned.data
         post.updated_at = datetime.utcnow()
         db.session.commit()
         flash('Post updated', 'success')
         return redirect(url_for('community.view_post', id=post.id))
+    
     return render_template('community_post_form.html.j2', form=form, post=post)
 
 

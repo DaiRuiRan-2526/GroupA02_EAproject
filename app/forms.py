@@ -81,6 +81,7 @@ class PostForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired(), Length(max=200)])
     content = TextAreaField('Content', validators=[DataRequired()])
     category = SelectField('Category', choices=[('general','General Discussion'),('help','Help Request'),('showcase','Showcase')])
+    is_pinned = BooleanField('Pin this post (Admin only)')
     submit = SubmitField('Publish')
 
 class CommentForm(FlaskForm):
