@@ -80,16 +80,21 @@ def view_post(id):
 def create_post():
     form = PostForm()
     if form.validate_on_submit():
+        now = datetime.utcnow()
+        
         post = DiscussionPost(
             title=form.title.data,
             content=form.content.data,
             category=form.category.data,
             user_id=current_user.id,
-            is_pinned=form.is_pinned.data if current_user.is_admin() else False
+            is_pinned=form.is_pinned.data if current_user.is_admin() else False,
+            created_at=now,      
+            updated_at=now      
         )
         db.session.add(post)
         db.session.commit()
-        flash('Post created', 'success')
+        
+        flash('Post created successfully', 'success')
         return redirect(url_for('community.view_post', id=post.id))
     
     return render_template('community_post_form.html.j2', form=form)
@@ -101,14 +106,19 @@ def edit_post(id):
     post = DiscussionPost.query.get_or_404(id)
     if post.user_id != current_user.id and not current_user.is_admin():
         abort(403)
+    
     form = PostForm(obj=post)
     if form.validate_on_submit():
         post.title = form.title.data
         post.content = form.content.data
         post.category = form.category.data
+        
         if current_user.is_admin():
             post.is_pinned = form.is_pinned.data
+        
+        post.is_edited = True     
         post.updated_at = datetime.utcnow()
+        
         db.session.commit()
         flash('Post updated', 'success')
         return redirect(url_for('community.view_post', id=post.id))

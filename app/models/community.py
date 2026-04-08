@@ -12,7 +12,7 @@ class DiscussionPost(db.Model):
     reply_count = db.Column(db.Integer, default=0)
     is_pinned = db.Column(db.Boolean, default=False)
     is_closed = db.Column(db.Boolean, default=False)
-    
+    is_edited = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
