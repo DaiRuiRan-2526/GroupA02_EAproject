@@ -22,8 +22,34 @@
                     <span class="badge bg-warning mb-3">📌 Pinned Post</span>
                     {% endif %}
 
-                    <h1 class="display-6 fw-bold mb-3">{{ post.title }}</h1>
+                    <!-- Post Title + Action Buttons -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h1 class="display-6 fw-bold mb-0">{{ post.title }}</h1>
+                        
+                        <!-- Admin Only: Edit & Delete Post -->
+                        {% if current_user.is_authenticated and current_user.is_admin() %}
+                        <div class="btn-group">
+                            <a href="{{ url_for('community.edit_post', id=post.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit me-1"></i>Edit
+                            </a>
+                            <button onclick="confirmDeletePost({{ post.id }})" 
+                                    class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash me-1"></i>Delete
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Edited Tag -->
+                    {% if post.is_edited %}
+                    <div class="d-flex align-items-center small text-muted mb-3">
+                        <i class="fas fa-edit me-1 text-primary"></i>
+                        <span>Edited on {{ post.updated_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    {% endif %}
                     
+                    <!-- Author Info -->
                     <div class="d-flex align-items-center text-muted mb-4">
                         <img src="https://ui-avatars.com/api/?name={{ post.author.username if post.author else 'User' }}&background=5c2d91&color=fff" 
                              class="rounded-circle me-3" width="40" height="40" alt="">
@@ -42,7 +68,7 @@
                         {{ post.content | safe }}
                     </div>
 
-                    <!-- Like button -->
+                    <!-- Like & Stats -->
                     <div class="d-flex gap-3 mt-4">
                         <button id="like-btn" 
                                 class="btn like-button {{ 'btn-danger text-white' if current_user_has_liked else 'btn-outline-danger' }}"
@@ -69,32 +95,57 @@
             <h4 class="mb-4">
                 Comments ({{ comments|selectattr('parent_id', 'none')|list|length }})
             </h4>
+
             {% for comment in comments %}
-                {% if not comment.parent_id %}   <!-- show main comments -->
+                {% if not comment.parent_id %}   <!-- Main comments only -->
 
                 <div class="card mb-4 border-0 shadow-sm">
                     <div class="card-body">
                         <div class="d-flex">
                             <img src="https://ui-avatars.com/api/?name={{ comment.user.username if comment.user else 'User' }}&background=5c2d91&color=fff" 
-                                class="rounded-circle me-3" width="42" height="42">
+                                 class="rounded-circle me-3" width="42" height="42">
+                            
                             <div class="flex-grow-1">
-                                <div class="d-flex justify-content-between">
+                                <div class="d-flex justify-content-between align-items-center">
                                     <strong>{{ comment.user.username if comment.user else 'Unknown User' }}</strong>
-                                    <small class="text-muted">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                    
+                                    <div class="d-flex align-items-center gap-2">
+                                        <small class="text-muted">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        
+                                        <!-- Admin Delete Button for Main Comment -->
+                                        {% if current_user.is_admin() %}
+                                        <button onclick="confirmDeleteComment({{ comment.id }})" 
+                                                class="btn btn-sm btn-outline-danger py-0 px-2" 
+                                                title="Delete Comment">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                                <div class="mt-2">{{ comment.content | safe }}</div>
+
+                                <!-- Main Comment Content -->
+                                <div class="mt-3">
+                                    {% if comment.content == "[Comment was deleted by admin]" %}
+                                        <div class="text-muted fst-italic">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Comment was deleted by admin
+                                        </div>
+                                    {% else %}
+                                        <div class="lh-base">{{ comment.content | safe }}</div>
+                                    {% endif %}
+                                </div>
 
                                 <!-- Reply Button -->
+                                {% if current_user.is_authenticated and comment.content != "[Comment was deleted by admin]" %}
                                 <div class="mt-3">
-                                    {% if current_user.is_authenticated %}
                                     <button class="btn btn-sm btn-outline-secondary" 
                                             onclick="showReplyForm({{ comment.id }})">
                                         <i class="fas fa-reply me-1"></i>Reply
                                     </button>
-                                    {% endif %}
                                 </div>
+                                {% endif %}
 
-                                
+                                <!-- Replies Section -->
                                 <div id="replies-container-{{ comment.id }}" class="mt-4">
                                     {% set replies = comment.replies.all() %}
                                     {% if replies %}
@@ -106,18 +157,41 @@
                                     <div id="reply-list-{{ comment.id }}" class="reply-list">
                                         {% for reply in replies %}
                                         <div class="mb-3 ms-4 border-start border-2 border-purple ps-3">
-                                            <div class="d-flex justify-content-between">
+                                            <div class="d-flex justify-content-between align-items-center">
                                                 <strong>{{ reply.user.username if reply.user else 'Unknown User' }}</strong>
-                                                <small class="text-muted">{{ reply.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                                
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <small class="text-muted">{{ reply.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                                    
+                                                    <!-- Admin Delete Button for Reply -->
+                                                    {% if current_user.is_admin() %}
+                                                    <button onclick="confirmDeleteReply({{ reply.id }})" 
+                                                            class="btn btn-sm btn-outline-danger py-0 px-2" 
+                                                            title="Delete Reply">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    {% endif %}
+                                                </div>
                                             </div>
-                                            <div class="mt-1">{{ reply.content | safe }}</div>
+
+                                            <!-- Reply Content -->
+                                            <div class="mt-1">
+                                                {% if reply.content == "[Comment was deleted by admin]" %}
+                                                    <div class="text-muted fst-italic">
+                                                        <i class="fas fa-info-circle me-1"></i>
+                                                        Comment was deleted by admin
+                                                    </div>
+                                                {% else %}
+                                                    <div>{{ reply.content | safe }}</div>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                         {% endfor %}
                                     </div>
                                     {% endif %}
                                 </div>
 
-                                <!-- Reply Form for this comment -->
+                                <!-- Reply Form -->
                                 <div id="reply-form-{{ comment.id }}" class="reply-form mt-3" style="display: none;">
                                     <form method="POST" action="{{ url_for('community.reply_to_comment', comment_id=comment.id) }}">
                                         {{ form.hidden_tag() }}
@@ -137,7 +211,7 @@
                 {% endif %}
             {% endfor %}
 
-            <!-- Main Reply to Post -->
+            <!-- Main Comment Form -->
             {% if current_user.is_authenticated %}
             <div class="card shadow-sm border-0 rounded-4 mt-5">
                 <div class="card-body p-4">
@@ -149,7 +223,7 @@
                             <div class="text-danger small mt-1">{{ error }}</div>
                         {% endfor %}
                         <button type="submit" class="btn btn-purple mt-3">
-                            <i class="fas fa-paper-plane me-2"></i>Post Reply
+                            <i class="fas fa-paper-plane me-2"></i>Post Comment
                         </button>
                     </form>
                 </div>
@@ -182,7 +256,6 @@ function toggleLike(postId) {
     .then(response => response.json())
     .then(data => {
         countSpan.textContent = data.like_count;
-
         if (data.liked) {
             btn.classList.remove('btn-outline-danger');
             btn.classList.add('btn-danger', 'text-white');
@@ -201,33 +274,49 @@ function toggleLike(postId) {
     });
 }
 
-// Nested Reply Functions
-function showReplyForm(commentId, username) {
-    const formDiv = document.getElementById(`reply-form-${commentId}`);
-    formDiv.style.display = 'block';
-}
-
-function hideReplyForm(commentId) {
-    document.getElementById(`reply-form-${commentId}`).style.display = 'none';
-}
-// shiw reply list
-function toggleReplies(commentId) {
-    const list = document.getElementById(`reply-list-${commentId}`);
-    if (list.style.display === 'none') {
-        list.style.display = 'block';
-    } else {
-        list.style.display = 'none';
+// Delete Functions
+function confirmDeletePost(postId) {
+    if (confirm('Are you sure you want to delete this post? This action cannot be undone!')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/community/post/${postId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
     }
 }
 
-// Show Reply
+function confirmDeleteComment(commentId) {
+    if (confirm('Are you sure you want to delete this comment? This action cannot be undone!')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/community/comment/${commentId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function confirmDeleteReply(replyId) {
+    if (confirm('Are you sure you want to delete this reply? This action cannot be undone!')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/community/reply/${replyId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Reply Functions
 function showReplyForm(commentId) {
     document.getElementById(`reply-form-${commentId}`).style.display = 'block';
 }
 
-// Hide Reply
 function hideReplyForm(commentId) {
     document.getElementById(`reply-form-${commentId}`).style.display = 'none';
+}
+
+function toggleReplies(commentId) {
+    const list = document.getElementById(`reply-list-${commentId}`);
+    list.style.display = (list.style.display === 'none') ? 'block' : 'none';
 }
 </script>
 {% endblock %}
