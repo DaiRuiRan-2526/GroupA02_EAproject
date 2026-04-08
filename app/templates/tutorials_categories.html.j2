@@ -1,0 +1,36 @@
+{% extends "base.html.j2" %}
+
+{% block title %}Manage Categories - ASP.NET Core{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Tutorial Categories</h2>
+        <a href="{{ url_for('tutorials.create_category') }}" class="btn btn-purple">+ New Category</a>
+    </div>
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr><th>Name</th><th>Slug</th><th>Sort Order</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for cat in categories %}
+                    <tr>
+                        <td>{{ cat.name }}</td>
+                        <td>{{ cat.slug }}</td>
+                        <td>{{ cat.sort_order }}</td>
+                        <td>
+                            <a href="{{ url_for('tutorials.edit_category', id=cat.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                            <form method="post" action="{{ url_for('tutorials.delete_category', id=cat.id) }}" style="display:inline;" onsubmit="return confirm('Delete this category?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

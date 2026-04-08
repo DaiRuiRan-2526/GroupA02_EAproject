@@ -88,6 +88,26 @@
         .text-purple {
             color: #5c2d91;
         }
+        .hover-shadow {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .hover-shadow:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 1rem 3rem rgba(0,0,0,.15) !important;
+        }
+        .tutorial-content h2 {
+            font-size: 1.8rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        .tutorial-content pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+        }
+
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -120,6 +140,9 @@
                                 <li><a class="dropdown-item" href="{{ url_for('main.user_profile', username=current_user.username) }}">Profile</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('tutorials.list_categories') }}">Manage Categories</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('tutorials.list_tags') }}">Manage Tags</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('tutorials.create') }}">New Tutorial</a></li>
                             </ul>
                         </li>
                     {% else %}

@@ -1,45 +1,91 @@
 {% extends "base.html.j2" %}
 
-{% block title %}Tutorials - ASP.NET Core{% endblock %}
+{% block title %}ASP.NET Core Tutorials | Step-by-Step Learning{% endblock %}
 
 {% block content %}
-<div class="container my-4">
+<!-- Hero / Page Header -->
+<div class="bg-light py-5 border-bottom">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-5 fw-bold">Tutorials</h1>
+                <p class="lead fs-4">Learn ASP.NET Core from the ground up. Free, cross-platform, and open-source.</p>
+            </div>
+            {% if current_user.is_authenticated and current_user.is_admin() %}
+            <div>
+                <a href="{{ url_for('tutorials.create') }}" class="btn btn-purple btn-lg">+ Create Tutorial</a>
+            </div>
+            {% endif %}
+        </div>
+        <form class="row g-3 mt-3" method="get" action="{{ url_for('tutorials.list') }}">
+        </form>
+    </div>
+</div>
+
+<div class="container my-5">
     <div class="row">
-        <div class="col-md-3 mb-4">
-            <div class="card shadow-sm border-0 rounded-4">
+        <!-- Sidebar: Categories & Filters -->
+        <aside class="col-md-3 mb-4">
+            <div class="card shadow-sm border-0 rounded-4 sticky-top" style="top: 80px;">
                 <div class="card-header bg-white border-0 pt-3">
-                    <h5><i class="fas fa-tags me-2"></i>Categories</h5>
+                    <h5><i class="fas fa-folder-open me-2"></i>Categories</h5>
                 </div>
                 <ul class="list-group list-group-flush">
-                    <li class="list-group-item"><a href="{{ url_for('tutorials.list') }}" class="text-decoration-none">All Tutorials</a></li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('tutorials.list') }}" class="text-decoration-none fw-semibold">All</a>
+                        <span class="badge bg-secondary rounded-pill">{{ total_count }}</span>
+                    </li>
                     {% for cat in categories %}
-                    <li class="list-group-item"><a href="{{ url_for('tutorials.list', category=cat.slug) }}" class="text-decoration-none">{{ cat.name }}</a></li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('tutorials.list', category=cat.slug) }}" class="text-decoration-none">{{ cat.name }}</a>
+                        <span class="badge bg-secondary rounded-pill">{{ cat.tutorials.count() }}</span>
+                    </li>
                     {% endfor %}
                 </ul>
             </div>
-        </div>
+        </aside>
+
+        <!-- Tutorial Cards Grid -->
         <div class="col-md-9">
-            <h2 class="mb-4">Tutorials</h2>
             {% if tutorials %}
                 <div class="row g-4">
                     {% for tutorial in tutorials %}
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 shadow-sm border-0 rounded-4">
+                    <div class="col-md-6">
+                        <article class="card h-100 shadow-sm border-0 rounded-4 hover-shadow">
                             <div class="card-body">
-                                <span class="badge bg-purple mb-2">{{ tutorial.difficulty|capitalize }}</span>
-                                <h5 class="card-title"><a href="{{ url_for('tutorials.view', slug=tutorial.slug) }}" class="text-decoration-none text-dark">{{ tutorial.title }}</a></h5>
-                                <p class="card-text text-muted">{{ tutorial.summary|truncate(100) }}</p>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <small><i class="far fa-clock me-1"></i> {{ tutorial.estimated_minutes }} min</small>
-                                    <small><i class="far fa-eye me-1"></i> {{ tutorial.view_count }}</small>
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-purple">{{ tutorial.difficulty|capitalize }}</span>
+                                    <small class="text-muted"><i class="far fa-calendar-alt me-1"></i>{{ tutorial.created_at.strftime('%b %d, %Y') }}</small>
+                                </div>
+                                <h5 class="card-title">
+                                    <a href="{{ url_for('tutorials.view', slug=tutorial.slug) }}" class="text-decoration-none text-dark stretched-link">{{ tutorial.title }}</a>
+                                </h5>
+                                <p class="card-text text-muted">{{ tutorial.summary|truncate(120) }}</p>
+                                <div class="mt-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge bg-light text-dark me-2"><i class="far fa-clock"></i> {{ tutorial.estimated_minutes }} min</span>
+                                        <span class="badge bg-light text-dark"><i class="far fa-eye"></i> {{ tutorial.view_count }}</span>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-purple"></i>
                                 </div>
                             </div>
-                        </div>
+                        </article>
                     </div>
                     {% endfor %}
                 </div>
+
+                <!-- Pagination (optional) -->
+                {% if pagination and pagination.pages > 1 %}
+                <nav class="mt-5">
+                    <ul class="pagination justify-content-center">
+                        <!-- pagination logic here -->
+                    </ul>
+                </nav>
+                {% endif %}
             {% else %}
-                <div class="alert alert-info">No tutorials found. Check back later!</div>
+                <div class="alert alert-info shadow-sm border-0 rounded-4">
+                    <i class="fas fa-info-circle me-2"></i> No tutorials found. Check back soon for new content!
+                </div>
             {% endif %}
         </div>
     </div>

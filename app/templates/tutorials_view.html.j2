@@ -1,50 +1,78 @@
 {% extends "base.html.j2" %}
 
-{% block title %}{{ tutorial.title }} - ASP.NET Core Tutorials{% endblock %}
+{% block title %}{{ tutorial.title }} | ASP.NET Core Tutorial{% endblock %}
 
 {% block content %}
-<div class="container my-4">
+<div class="container my-5">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ url_for('tutorials.list') }}">Tutorials</a></li>
-            <li class="breadcrumb-item active">{{ tutorial.title }}</li>
+            <li class="breadcrumb-item active" aria-current="page">{{ tutorial.title }}</li>
         </ol>
     </nav>
+
     <div class="row">
-        <div class="col-lg-8">
-            <h1 class="mb-3">{{ tutorial.title }}</h1>
-            <div class="d-flex gap-3 mb-4 text-muted">
+        <!-- Main Content -->
+        <article class="col-lg-8">
+            <h1 class="display-6 fw-bold mb-3">{{ tutorial.title }}</h1>
+            <div class="d-flex flex-wrap gap-3 mb-4 text-muted">
                 <span><i class="far fa-clock"></i> {{ tutorial.estimated_minutes }} min read</span>
                 <span><i class="far fa-eye"></i> {{ tutorial.view_count }} views</span>
                 <span><i class="far fa-thumbs-up"></i> {{ tutorial.like_count }} likes</span>
+                <span><i class="fas fa-tag"></i> {{ tutorial.category.name if tutorial.category else 'Uncategorized' }}</span>
+                <span><i class="fas fa-chart-line"></i> {{ tutorial.difficulty|capitalize }}</span>
             </div>
-            <div class="tutorial-content mb-5">
+            <div class="tutorial-content fs-5">
                 {{ tutorial.content|safe }}
             </div>
-        </div>
-        <div class="col-lg-4">
+
+            <!-- Tags -->
+            {% if tutorial.tags %}
+            <div class="mt-5">
+                <strong>Tags:</strong>
+                {% for tag in tutorial.tags %}
+                <span class="badge bg-secondary me-1">{{ tag.name }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Admin Actions (visible to admins only) -->
+            {% if current_user.is_authenticated and current_user.is_admin() %}
+            <div class="mt-4 p-3 bg-light rounded-3">
+                <h5>Admin Controls</h5>
+                <a href="{{ url_for('tutorials.edit', slug=tutorial.slug) }}" class="btn btn-sm btn-outline-secondary me-2">Edit Tutorial</a>
+                <form method="post" action="{{ url_for('tutorials.delete', slug=tutorial.slug) }}" class="d-inline" onsubmit="return confirm('Permanently delete this tutorial?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            </div>
+            {% endif %}
+        </article>
+
+        <!-- Sidebar: About & Related -->
+        <aside class="col-lg-4">
             <div class="card shadow-sm border-0 rounded-4 mb-4">
                 <div class="card-body">
-                    <h5>About this tutorial</h5>
-                    <ul class="list-unstyled">
+                    <h5 class="card-title"><i class="fas fa-info-circle me-2"></i>About this tutorial</h5>
+                    <ul class="list-unstyled mt-3">
                         <li><strong>Difficulty:</strong> {{ tutorial.difficulty|capitalize }}</li>
                         <li><strong>Category:</strong> {{ tutorial.category.name if tutorial.category else 'General' }}</li>
-                        <li><strong>Published:</strong> {{ tutorial.created_at.strftime('%Y-%m-%d') }}</li>
+                        <li><strong>First published:</strong> {{ tutorial.created_at.strftime('%B %d, %Y') }}</li>
+                        <li><strong>Last updated:</strong> {{ tutorial.updated_at.strftime('%B %d, %Y') }}</li>
                     </ul>
                 </div>
             </div>
-            {% if current_user.is_authenticated and current_user.is_admin() %}
+
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-body">
-                    <h5>Admin Actions</h5>
-                    <a href="{{ url_for('tutorials.edit', slug=tutorial.slug) }}" class="btn btn-sm btn-outline-secondary w-100 mb-2">Edit Tutorial</a>
-                    <form method="post" action="{{ url_for('tutorials.delete', slug=tutorial.slug) }}" onsubmit="return confirm('Delete this tutorial?')">
-                        <button type="submit" class="btn btn-sm btn-outline-danger w-100">Delete Tutorial</button>
-                    </form>
+                    <h5 class="card-title"><i class="fas fa-share-alt me-2"></i>Share</h5>
+                    <div class="d-flex gap-3 mt-2">
+                        <a href="#" class="text-secondary"><i class="fab fa-twitter fa-lg"></i></a>
+                        <a href="#" class="text-secondary"><i class="fab fa-linkedin fa-lg"></i></a>
+                        <a href="#" class="text-secondary"><i class="fab fa-facebook fa-lg"></i></a>
+                    </div>
                 </div>
             </div>
-            {% endif %}
-        </div>
+        </aside>
     </div>
 </div>
 {% endblock %}

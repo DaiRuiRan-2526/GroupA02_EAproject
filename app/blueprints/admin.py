@@ -15,9 +15,9 @@ bp = Blueprint('admin', __name__, url_prefix='/admin')
 @admin_required
 def dashboard():
     user_count = User.query.count()
-    tutorial_count = 0  # 可以动态导入 Tutorial 模型
+    tutorial_count = 0  
     resource_count = 0
-    return render_template('admin/dashboard.html', 
+    return render_template('admin.html.j2', 
                            user_count=user_count,
                            tutorial_count=tutorial_count,
                            resource_count=resource_count)

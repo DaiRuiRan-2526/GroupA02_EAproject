@@ -3,6 +3,8 @@ from app.config import Config
 from flask_migrate import Migrate
 from app.extensions import db, login_manager, bootstrap
 
+
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
